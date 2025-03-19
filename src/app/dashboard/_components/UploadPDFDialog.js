@@ -28,6 +28,7 @@ function UploadPDFDialog({ children }) {
   const {user} = useUser();
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState("");
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     setIsClient(true);
@@ -43,39 +44,45 @@ function UploadPDFDialog({ children }) {
   const OnUpload = async() =>{
     setLoading(true);
 
-    // const postUrl = await generateUploadUrl();
+    const postUrl = await generateUploadUrl();
 
-    // const result = await fetch(postUrl, {
-    //   method: "POST",
-    //   headers: { "Content-Type": file?.type },
-    //   body: file,
-    // });
-    // const { storageId } = await result.json();
-    // console.log(storageId);
-    // const fileId = uuidv4();
-    // console.log(fileId);
+    const result = await fetch(postUrl, {
+      method: "POST",
+      headers: { "Content-Type": file?.type },
+      body: file,
+    });
+    const { storageId } = await result.json();
     
-    // const fileUrl = await getFileUrl({storageId: storageId});
+    const fileId = uuidv4();
+    
+    const fileUrl = await getFileUrl({storageId: storageId});
 
-    // const resp = await AddFileEntry({
-    //   fileId: fileId,
-    //   storageId: storageId, 
-    //   fileName:fileName ?? "Untitled File",
-    //   fileUrl: fileUrl,
-    //   createdBy: user?.primaryEmailAddress.emailAddress
-    // })
-    // console.log(resp);
+    const resp = await AddFileEntry({
+      fileId: fileId,
+      storageId: storageId, 
+      fileName:fileName ?? "Untitled File",
+      fileUrl: fileUrl,
+      createdBy: user?.primaryEmailAddress.emailAddress
+    })
 
     // API Call to Fetch PDF Process Data 
-    const ApiResp = await axios.get("/api/pdf-loader");
-    console.log(ApiResp);
+    const ApiResp = await axios.get("/api/pdf-loader?pdfurl=" + fileUrl);
+    const embeddResult = embeddDocument({
+      splitText: ApiResp.data.message,
+      fileId: fileId,
+    });
+    console.log(embeddResult);
+    
     setLoading(false);
+    setOpen(false);
     
   }
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open}>
+      <DialogTrigger asChild>
+        <Button onClick={() =>setOpen(true)} className="w-full">Upload PDF</Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Upload Pdf file</DialogTitle>
@@ -98,7 +105,7 @@ function UploadPDFDialog({ children }) {
               Close
             </Button>
           </DialogClose>
-          <Button onClick={OnUpload}>
+          <Button onClick={OnUpload} disabled = {loading} >
           {loading ? <Loader2Icon className="animate-spin"/> :"Upload"}
           </Button>
         </DialogFooter>

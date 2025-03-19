@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values"; // Convex'in tip tanımlamalarını kullanmak için
 
 // Dosya yükleme URL'si oluşturma fonksiyonu
@@ -32,7 +32,7 @@ export const AddFileEntryToDb = mutation({
 });
 
 // Dosya URL'sini alma fonksiyonu
-export const getFileUrl = mutation({
+export const getFileUrl = query({
   args: {
     storageId: v.string(), // Dosyanın storage'daki ID'si
   },
@@ -47,3 +47,15 @@ export const getFileUrl = mutation({
     return fileUrl; // Dosya URL'sini döndür
   },
 });
+
+export const GetFileRecord = query({
+  args:{
+    fileId: v.string()
+  },
+  handler:async(ctx,args)=>{
+    const result = await ctx.db.query("pdfFiles").filter((q) => q.eq(q.field("fileId"), args.fileId)).collect();
+    console.log(result);
+    
+    return result[0];
+  }
+})
